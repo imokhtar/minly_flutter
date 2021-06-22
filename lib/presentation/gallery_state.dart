@@ -1,3 +1,7 @@
+import 'dart:typed_data';
+
+import 'package:equatable/equatable.dart';
+
 enum NetworkingStatus { inital, loading, succeded, failed }
 
 class GalleryState extends Equatable {
