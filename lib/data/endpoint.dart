@@ -3,7 +3,7 @@ class Endpoint {
   final String path;
 
   const Endpoint({
-    this.host = "http://127.0.0.1:3000/",
+    this.host = "http://10.0.2.2:3000/",
     required this.path,
   });
 

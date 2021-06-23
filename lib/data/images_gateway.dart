@@ -1,18 +1,19 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:minly_gallery/data/endpoints.dart';
 import 'package:minly_gallery/data/minly_exceptions.dart';
 import 'package:minly_gallery/data/minly_image.dart';
+import 'package:http_parser/http_parser.dart';
 
 class ImageGateway {
   final http.Client client;
-  final http.MultipartRequest uploadRequest;
 
   static ImageGateway shared = ImageGateway(
-      client: http.Client(),
-      uploadRequest: http.MultipartRequest('POST', Endpoints.uploadImage.uri));
+    client: http.Client(),
+  );
 
-  ImageGateway({required this.client, required this.uploadRequest});
+  ImageGateway({required this.client});
 
   Future<List<MinlyImage>> getImages() {
     final getImagesFuture = client.get(Endpoints.images.uri).then((res) {
@@ -38,8 +39,11 @@ class ImageGateway {
     return getImagesFuture;
   }
 
-  Future<void> uploadImage(String data) {
-    uploadRequest.files.add(http.MultipartFile.fromString("image", data));
+  Future<void> uploadImage(Uint8List data) {
+    final uploadRequest =
+        http.MultipartRequest('POST', Endpoints.uploadImage.uri);
+    uploadRequest.files.add(http.MultipartFile.fromBytes("image", data,
+        contentType: MediaType('image', 'png'), filename: "img.png"));
     final uploadImagesFuture = uploadRequest.send().then((res) {
       if (res.statusCode == 201) {
         return print(res.statusCode);

@@ -2,7 +2,8 @@
     package="com.example.minly_gallery">
    <application
         android:label="minly_gallery"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"

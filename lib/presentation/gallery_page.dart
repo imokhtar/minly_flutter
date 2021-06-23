@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:minly_gallery/data/images_gateway.dart';
-import 'package:minly_gallery/presentation/gallery_page_bloc.dart';
+import 'package:minly_gallery/presentation/gallery_cubit.dart';
 
 import '../helpers.dart/circular_progress.dart';
 import 'gallery_state.dart';
@@ -13,19 +14,22 @@ class GalleryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => GalleryCubit(gateway: ImageGateway.shared),
-      child: GalleryPageContainer(),
+      child: GalleryViewContainer(),
     );
   }
 }
 
-class GalleryPageContainer extends StatefulWidget {
-  const GalleryPageContainer({Key? key}) : super(key: key);
+class GalleryViewContainer extends StatefulWidget {
+  final title = 'Minly Gallery';
+  final _picker = ImagePicker();
+
+  GalleryViewContainer({Key? key}) : super(key: key);
 
   @override
-  GalleryPageContainerState createState() => GalleryPageContainerState();
+  GalleryViewContainerState createState() => GalleryViewContainerState();
 }
 
-class GalleryPageContainerState extends State<GalleryPageContainer> {
+class GalleryViewContainerState extends State<GalleryViewContainer> {
   @override
   void initState() {
     super.initState();
@@ -35,7 +39,26 @@ class GalleryPageContainerState extends State<GalleryPageContainer> {
 
   @override
   Widget build(BuildContext context) {
-    return GalleryView();
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: GalleryView(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: pickImage,
+        tooltip: 'Increment',
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+
+  void pickImage() {
+    widget._picker.getImage(source: ImageSource.gallery).then((pickedFile) {
+      pickedFile?.readAsBytes().then(
+          (bytes) => BlocProvider.of<GalleryCubit>(context).uploadImage(bytes));
+    }).catchError((err) {
+      print(err);
+    });
   }
 }
 
@@ -47,17 +70,7 @@ class GalleryView extends StatelessWidget {
     return BlocConsumer<GalleryCubit, GalleryState>(
       listener: (context, state) {
         if (state.networkingStatus == NetworkingStatus.loading) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            useRootNavigator: false,
-            builder: (BuildContext context) {
-              return WillPopScope(
-                onWillPop: () async => false,
-                child: CircularProgress(),
-              );
-            },
-          );
+          showLoading(context);
           return;
         }
         if (state.networkingStatus == NetworkingStatus.failed) {
@@ -85,8 +98,8 @@ class GalleryView extends StatelessWidget {
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
               children: state.images!
-                  .map((image) => FittedBox(
-                        child: Image.memory(image),
+                  .map((imageBytes) => FittedBox(
+                        child: Image.memory(imageBytes),
                         fit: BoxFit.fill,
                       ))
                   .toList(),
@@ -96,6 +109,20 @@ class GalleryView extends StatelessWidget {
               color: Colors.white,
             );
         }
+      },
+    );
+  }
+
+  Future showLoading(BuildContext context) {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: false,
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: CircularProgress(),
+        );
       },
     );
   }
